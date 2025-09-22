@@ -20,15 +20,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Dados de localização (cidades com professores e alunos)
         const locations = [
-            { name: "São Paulo", lat: -23.5505, lng: -46.6333, teachers: 120, students: 450, status: "active" },
-            { name: "Rio de Janeiro", lat: -22.9068, lng: -43.1729, teachers: 85, students: 320, status: "active" },
-            { name: "Belo Horizonte", lat: -19.9167, lng: -43.9345, teachers: 65, students: 240, status: "active" },
-            { name: "Salvador", lat: -12.9714, lng: -38.5014, teachers: 50, students: 180, status: "active" },
-            { name: "Brasília", lat: -15.7801, lng: -47.9292, teachers: 70, students: 260, status: "active" },
-            { name: "Fortaleza", lat: -3.7319, lng: -38.5267, teachers: 40, students: 150, status: "active" },
-            { name: "Recife", lat: -8.0476, lng: -34.8770, teachers: 35, students: 130, status: "active" },
-            { name: "Porto Alegre", lat: -30.0346, lng: -51.2177, teachers: 45, students: 170, status: "active" },
-            { name: "Curitiba", lat: -25.4290, lng: -49.2671, teachers: 55, students: 210, status: "active" },
+            { name: "Salvador", lat: -12.9714, lng: -38.5014, teachers: 50, students: 235, status: "active" },
+            { name: "São Paulo", lat: -23.5505, lng: -46.6333, teachers: 120, students: 450, status: "expansion" },
+            { name: "Rio de Janeiro", lat: -22.9068, lng: -43.1729, teachers: 85, students: 320, status: "expansion" },
+            { name: "Belo Horizonte", lat: -19.9167, lng: -43.9345, teachers: 65, students: 240, status: "expansion" },
+            { name: "Brasília", lat: -15.7801, lng: -47.9292, teachers: 70, students: 260, status: "expansion" },
+            { name: "Fortaleza", lat: -3.7319, lng: -38.5267, teachers: 40, students: 150, status: "expansion" },
+            { name: "Recife", lat: -8.0476, lng: -34.8770, teachers: 35, students: 130, status: "expansion" },
+            { name: "Porto Alegre", lat: -30.0346, lng: -51.2177, teachers: 45, students: 170, status: "expansion" },
+            { name: "Curitiba", lat: -25.4290, lng: -49.2671, teachers: 55, students: 210, status: "expansion" },
             { name: "Manaus", lat: -3.1190, lng: -60.0217, teachers: 20, students: 80, status: "expansion" },
             { name: "Belém", lat: -1.4558, lng: -48.4902, teachers: 15, students: 60, status: "expansion" },
             { name: "Goiânia", lat: -16.6799, lng: -49.2550, teachers: 30, students: 110, status: "expansion" },
@@ -142,21 +142,43 @@ document.addEventListener('DOMContentLoaded', function() {
     
     faqItems.forEach(item => {
         const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const icon = question.querySelector('i');
         
-        if (question) {
+        if (question && answer) {
             question.addEventListener('click', () => {
                 // Close all other items
                 faqItems.forEach(otherItem => {
                     if (otherItem !== item && otherItem.classList.contains('active')) {
+                        const otherAnswer = otherItem.querySelector('.faq-answer');
+                        const otherIcon = otherItem.querySelector('.faq-question i');
                         otherItem.classList.remove('active');
+                        if (otherAnswer) {
+                            otherAnswer.style.maxHeight = '0';
+                        }
+                        if (otherIcon) {
+                            otherIcon.style.transform = 'rotate(0deg)';
+                        }
                     }
                 });
                 
                 // Toggle current item
                 item.classList.toggle('active');
+                
+                if (item.classList.contains('active')) {
+                    answer.style.maxHeight = answer.scrollHeight + 'px';
+                    if (icon) {
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                } else {
+                    answer.style.maxHeight = '0';
+                    if (icon) {
+                        icon.style.transform = 'rotate(0deg)';
+                    }
+                }
             });
         }
-    });
+     });
     
     // Theme Toggle
     const themeToggle = document.querySelector('.theme-toggle');
@@ -247,4 +269,135 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+
+    // Inicialização do Carrossel
+    initCarousel();
 });
+
+// Função para inicializar o carrossel
+function initCarousel() {
+    const carousel = document.querySelector('.carousel-container');
+    if (!carousel) return;
+    
+    const slidesContainer = carousel.querySelector('.carousel-slides');
+    const slides = carousel.querySelectorAll('.carousel-slide');
+    const prevButton = carousel.querySelector('.carousel-control.prev');
+    const nextButton = carousel.querySelector('.carousel-control.next');
+    const indicatorsContainer = carousel.querySelector('.carousel-indicators');
+    
+    let currentIndex = 0;
+    const totalSlides = slides.length;
+    let autoplayInterval;
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    // Criar indicadores
+    for (let i = 0; i < totalSlides; i++) {
+        const indicator = document.createElement('button');
+        indicator.classList.add('carousel-indicator', 'w-3', 'h-3', 'rounded-full', 'bg-white/50');
+        if (i === 0) {
+            indicator.classList.add('active', 'bg-white');
+        }
+        indicator.setAttribute('aria-label', `Slide ${i + 1}`);
+        indicator.addEventListener('click', () => goToSlide(i));
+        indicatorsContainer.appendChild(indicator);
+    }
+    
+    // Função para ir para um slide específico
+    function goToSlide(index) {
+        // Garantir que o índice esteja dentro dos limites
+        if (index < 0) {
+            index = totalSlides - 1;
+        } else if (index >= totalSlides) {
+            index = 0;
+        }
+        
+        currentIndex = index;
+        const translateValue = -currentIndex * 100 + '%';
+        slidesContainer.style.transform = `translateX(${translateValue})`;
+        
+        // Atualizar indicadores
+        const indicators = indicatorsContainer.querySelectorAll('.carousel-indicator');
+        indicators.forEach((indicator, i) => {
+            if (i === currentIndex) {
+                indicator.classList.add('active', 'bg-white');
+                indicator.classList.remove('bg-white/50');
+            } else {
+                indicator.classList.remove('active', 'bg-white');
+                indicator.classList.add('bg-white/50');
+            }
+        });
+        
+        // Reiniciar o temporizador de autoplay
+        resetAutoplay();
+    }
+    
+    // Funções para os botões de navegação
+    function goToPrevSlide() {
+        goToSlide(currentIndex - 1);
+    }
+    
+    function goToNextSlide() {
+        goToSlide(currentIndex + 1);
+    }
+    
+    // Configurar autoplay
+    function startAutoplay() {
+        autoplayInterval = setInterval(goToNextSlide, 5000); // Muda a cada 5 segundos
+    }
+    
+    function resetAutoplay() {
+        clearInterval(autoplayInterval);
+        startAutoplay();
+    }
+    
+    // Adicionar event listeners para os botões
+    if (prevButton) {
+        prevButton.addEventListener('click', goToPrevSlide);
+    }
+    if (nextButton) {
+        nextButton.addEventListener('click', goToNextSlide);
+    }
+    
+    // Adicionar suporte a gestos de toque (swipe)
+    slidesContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+    
+    slidesContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+    
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                // Swipe left - next slide
+                goToNextSlide();
+            } else {
+                // Swipe right - previous slide
+                goToPrevSlide();
+            }
+        }
+    }
+    
+    // Pausar autoplay quando o mouse estiver sobre o carrossel
+    carousel.addEventListener('mouseenter', () => {
+        clearInterval(autoplayInterval);
+    });
+    
+    carousel.addEventListener('mouseleave', () => {
+        startAutoplay();
+    });
+    
+    // Iniciar o carrossel
+    startAutoplay();
+    
+    // Ajustar o carrossel em caso de redimensionamento da janela
+    window.addEventListener('resize', () => {
+        goToSlide(currentIndex);
+    });
+}

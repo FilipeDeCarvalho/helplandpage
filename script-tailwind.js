@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Inicialização do Carrossel
+    initCarousel();
+    
     // FAQ Accordion
     const faqItems = document.querySelectorAll('.faq-item');
     
@@ -42,25 +45,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Theme Toggle
+    // Theme Toggle with localStorage persistence
     const themeToggle = document.querySelector('.theme-toggle');
     const body = document.body;
+    
+    // Load saved theme preference
+    const savedTheme = localStorage.getItem('theme');
+    
+    if (savedTheme === 'dark') {
+        body.classList.add('dark');
+        document.documentElement.classList.add('dark');
+    }
     
     if (themeToggle) {
         themeToggle.addEventListener('click', (e) => {
             e.preventDefault();
-            body.classList.toggle('dark');
             
-            // Change icon
-            const icon = themeToggle.querySelector('i');
-            if (icon) {
-                if (body.classList.contains('dark')) {
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
-                } else {
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
-                }
+            // Toggle dark class
+            body.classList.toggle('dark');
+            document.documentElement.classList.toggle('dark');
+            
+            // Save preference
+            if (body.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
             }
         });
     }
@@ -69,14 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatWidget = document.querySelector('.chat-widget');
     const closeChat = document.querySelector('.close-chat');
     
-    if (chatWidget) {
-        chatWidget.addEventListener('click', () => {
-            // Open WhatsApp chat
-            window.open('https://wa.me/5575988423960?text=Olá! Gostaria de saber mais sobre o HELP.', '_blank');
-        });
-    }
-    
-    if (closeChat) {
+    if (chatWidget && closeChat) {
         closeChat.addEventListener('click', (e) => {
             e.stopPropagation();
             chatWidget.classList.add('minimized');
@@ -84,165 +86,213 @@ document.addEventListener('DOMContentLoaded', function() {
             // After 300ms, show only the icon
             setTimeout(() => {
                 chatWidget.innerHTML = '<i class="fab fa-whatsapp text-2xl"></i>';
-                chatWidget.classList.remove('minimized');
+                chatWidget.classList.add('w-14', 'h-14', 'justify-center');
+                chatWidget.classList.remove('px-6', 'py-4', 'space-x-3');
             }, 300);
         });
-    }
-    
-    // Smooth scrolling for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-    
-    // Initialize Leaflet Map
-    if (typeof L !== 'undefined' && document.getElementById('real-map')) {
-        // Initialize the map
-        const map = L.map('real-map').setView([-12.9714, -38.5014], 6);
         
-        // Add tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-        
-        // Cities data with coordinates
-        const cities = [
-            { name: 'Salvador', lat: -12.9714, lng: -38.5014, teachers: 45, students: 120, status: 'active' },
-            { name: 'Feira de Santana', lat: -12.2664, lng: -38.9663, teachers: 23, students: 67, status: 'active' },
-            { name: 'Vitória da Conquista', lat: -14.8619, lng: -40.8444, teachers: 18, students: 45, status: 'active' },
-            { name: 'Camaçari', lat: -12.6997, lng: -38.3243, teachers: 15, students: 38, status: 'expanding' },
-            { name: 'Juazeiro', lat: -9.4111, lng: -40.4986, teachers: 12, students: 29, status: 'expanding' },
-            { name: 'Lauro de Freitas', lat: -12.8944, lng: -38.3222, teachers: 8, students: 22, status: 'expanding' },
-            { name: 'Ilhéus', lat: -14.7880, lng: -39.0339, teachers: 10, students: 25, status: 'active' },
-            { name: 'Jequié', lat: -13.8587, lng: -40.0831, teachers: 7, students: 18, status: 'expanding' },
-            { name: 'Teixeira de Freitas', lat: -17.5392, lng: -39.7378, teachers: 5, students: 14, status: 'expanding' },
-            { name: 'Alagoinhas', lat: -12.1355, lng: -38.4183, teachers: 9, students: 21, status: 'active' }
-        ];
-        
-        // Add markers for each city
-        cities.forEach(city => {
-            const color = city.status === 'active' ? '#10b981' : '#f59e0b';
-            const icon = L.divIcon({
-                className: 'custom-marker',
-                html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
-            });
-            
-            const marker = L.marker([city.lat, city.lng], { icon }).addTo(map);
-            
-            // Add click event to marker
-            marker.on('click', function() {
-                // Update info card
-                const stateName = document.querySelector('.state-name');
-                const teachersCount = document.querySelector('.teachers-count');
-                const studentsCount = document.querySelector('.students-count');
+        // Restore chat button when clicked in minimized mode
+        chatWidget.addEventListener('click', () => {
+            if (chatWidget.classList.contains('w-14')) {
+                chatWidget.classList.remove('w-14', 'h-14', 'justify-center', 'minimized');
+                chatWidget.classList.add('px-6', 'py-4', 'space-x-3');
+                chatWidget.innerHTML = '<i class="fab fa-whatsapp text-2xl"></i><span class="font-medium">Precisa de ajuda? Fale conosco!</span><i class="fas fa-times close-chat"></i>';
                 
-                if (stateName) stateName.textContent = city.name;
-                if (teachersCount) teachersCount.textContent = city.teachers;
-                if (studentsCount) studentsCount.textContent = city.students;
-            });
-            
-            // Add popup
-            marker.bindPopup(`
-                <div class="text-center">
-                    <h3 class="font-semibold text-lg">${city.name}</h3>
-                    <p class="text-sm text-gray-600">${city.teachers} professores • ${city.students} alunos</p>
-                    <span class="inline-block px-2 py-1 text-xs rounded-full ${
-                        city.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }">
-                        ${city.status === 'active' ? 'Ativo' : 'Em Expansão'}
-                    </span>
-                </div>
-            `);
-        });
-    }
-    
-    // Add scroll animations
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate-fade-in');
+                // Reattach event listener to the new close button
+                document.querySelector('.close-chat').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    chatWidget.classList.add('minimized');
+                    
+                    setTimeout(() => {
+                        chatWidget.innerHTML = '<i class="fab fa-whatsapp text-2xl"></i>';
+                        chatWidget.classList.add('w-14', 'h-14', 'justify-center');
+                        chatWidget.classList.remove('px-6', 'py-4', 'space-x-3');
+                    }, 300);
+                });
+            } else {
+                // Simulate WhatsApp opening
+                window.open('https://wa.me/5575988423960', '_blank');
             }
         });
-    }, observerOptions);
-    
-    // Observe elements for animation
-    document.querySelectorAll('.step, .testimonial-card, .faq-item').forEach(el => {
-        observer.observe(el);
-    });
-    
-    // Mobile menu toggle (if needed)
-    const mobileMenuButton = document.querySelector('[data-mobile-menu]');
-    const mobileMenu = document.querySelector('[data-mobile-menu-content]');
-    
-    if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
     }
     
-    // Add parallax effect to hero section
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const heroImage = document.querySelector('.hero-image img');
-        
-        if (heroImage) {
-            const speed = scrolled * 0.5;
-            heroImage.style.transform = `translateY(${speed}px)`;
+    // Smooth Scrolling for Navigation
+    const navLinks = document.querySelectorAll('nav a');
+    
+    navLinks.forEach(link => {
+        if (link.getAttribute('href') && link.getAttribute('href').startsWith('#')) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                const targetId = link.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetSection = document.querySelector(targetId);
+                if (targetSection) {
+                    window.scrollTo({
+                        top: targetSection.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
+                }
+            });
         }
     });
     
-    // Add loading animation
-    window.addEventListener('load', () => {
-        document.body.classList.add('loaded');
-    });
+    // Counters Animation
+    const counters = document.querySelectorAll('.counter');
+    let hasAnimated = false;
+    
+    function animateCounters() {
+        if (hasAnimated) return;
+        
+        counters.forEach(counter => {
+            const target = +counter.getAttribute('data-target');
+            const count = +counter.innerText;
+            const increment = target / 100;
+            
+            if (count < target) {
+                counter.innerText = Math.ceil(count + increment);
+                setTimeout(() => animateCounters(), 20);
+            } else {
+                counter.innerText = target;
+            }
+        });
+    }
+    
+    // Animate counters when they come into view
+    const statsSection = document.querySelector('.stats-section');
+    if (statsSection) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !hasAnimated) {
+                    hasAnimated = true;
+                    animateCounters();
+                }
+            });
+        }, { threshold: 0.5 });
+        
+        observer.observe(statsSection);
+    }
 });
 
-// Add custom CSS for animations
-const style = document.createElement('style');
-style.textContent = `
-    .custom-marker {
-        background: transparent !important;
-        border: none !important;
+// Função para inicializar o carrossel
+function initCarousel() {
+    const carousel = document.querySelector('.carousel-container');
+    if (!carousel) return;
+    
+    const slidesContainer = carousel.querySelector('.carousel-slides');
+    const slides = carousel.querySelectorAll('.carousel-slide');
+    const prevButton = carousel.querySelector('.carousel-control.prev');
+    const nextButton = carousel.querySelector('.carousel-control.next');
+    const indicatorsContainer = carousel.querySelector('.carousel-indicators');
+    
+    let currentIndex = 0;
+    const totalSlides = slides.length;
+    let autoplayInterval;
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    // Criar indicadores
+    for (let i = 0; i < totalSlides; i++) {
+        const indicator = document.createElement('button');
+        indicator.classList.add('carousel-indicator', 'w-3', 'h-3', 'rounded-full', 'bg-white/50');
+        if (i === 0) {
+            indicator.classList.add('active', 'bg-white');
+        }
+        indicator.setAttribute('aria-label', `Slide ${i + 1}`);
+        indicator.addEventListener('click', () => goToSlide(i));
+        indicatorsContainer.appendChild(indicator);
     }
     
-    .faq-answer {
-        transition: max-height 0.3s ease-out;
+    // Função para ir para um slide específico
+    function goToSlide(index) {
+        // Garantir que o índice esteja dentro dos limites
+        if (index < 0) {
+            index = totalSlides - 1;
+        } else if (index >= totalSlides) {
+            index = 0;
+        }
+        
+        currentIndex = index;
+        const translateValue = -currentIndex * 100 + '%';
+        slidesContainer.style.transform = `translateX(${translateValue})`;
+        
+        // Atualizar indicadores
+        const indicators = indicatorsContainer.querySelectorAll('.carousel-indicator');
+        indicators.forEach((indicator, i) => {
+            if (i === currentIndex) {
+                indicator.classList.add('active', 'bg-white');
+                indicator.classList.remove('bg-white/50');
+            } else {
+                indicator.classList.remove('active', 'bg-white');
+                indicator.classList.add('bg-white/50');
+            }
+        });
+        
+        // Reiniciar o temporizador de autoplay
+        resetAutoplay();
     }
     
-    .faq-question i {
-        transition: transform 0.3s ease;
+    // Funções para os botões de navegação
+    function goToPrevSlide() {
+        goToSlide(currentIndex - 1);
     }
     
-    body {
-        opacity: 0;
-        transition: opacity 0.3s ease;
+    function goToNextSlide() {
+        goToSlide(currentIndex + 1);
     }
     
-    body.loaded {
-        opacity: 1;
+    // Configurar autoplay
+    function startAutoplay() {
+        autoplayInterval = setInterval(goToNextSlide, 5000); // Muda a cada 5 segundos
     }
     
-    @media (prefers-reduced-motion: reduce) {
-        * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
+    function resetAutoplay() {
+        clearInterval(autoplayInterval);
+        startAutoplay();
+    }
+    
+    // Adicionar event listeners para os botões
+    prevButton.addEventListener('click', goToPrevSlide);
+    nextButton.addEventListener('click', goToNextSlide);
+    
+    // Adicionar suporte a gestos de toque (swipe)
+    slidesContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+    
+    slidesContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+    
+    function handleSwipe() {
+        const swipeThreshold = 50; // Mínimo de pixels para considerar um swipe
+        const swipeDistance = touchEndX - touchStartX;
+        
+        if (swipeDistance > swipeThreshold) {
+            // Swipe para a direita (voltar)
+            goToPrevSlide();
+        } else if (swipeDistance < -swipeThreshold) {
+            // Swipe para a esquerda (avançar)
+            goToNextSlide();
         }
     }
-`;
-document.head.appendChild(style);
+    
+    // Pausar autoplay quando o mouse estiver sobre o carrossel
+    carousel.addEventListener('mouseenter', () => {
+        clearInterval(autoplayInterval);
+    });
+    
+    carousel.addEventListener('mouseleave', () => {
+        startAutoplay();
+    });
+    
+    // Iniciar o carrossel
+    startAutoplay();
+    
+    // Ajustar o carrossel em caso de redimensionamento da janela
+    window.addEventListener('resize', () => {
+        goToSlide(currentIndex);
+    });
+}
