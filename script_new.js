@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 // Simulate WhatsApp opening
-                window.open('https://wa.me/5575988423960', '_blank');
+                window.open('https://wa.me/557192243918', '_blank');
             }
         });
     }
